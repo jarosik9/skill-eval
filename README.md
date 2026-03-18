@@ -9,7 +9,7 @@
 ## 快速开始（一行命令）
 
 ```bash
-cd ~/.openclaw/workspace/operations/skills/openclaw-eval-skill
+cd ~/.openclaw/workspace/operations/openclaw-eval-skill
 
 # 运行完整评测（both 模式：compare + trigger）
 python scripts/run_orchestrator.py \
