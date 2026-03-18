@@ -213,6 +213,11 @@ def main():
     parser.add_argument("--timings-dir", required=True)
     parser.add_argument("--models", default="sonnet")
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show detailed output per eval (default: summary only)"
+    )
     args = parser.parse_args()
 
     analyze_latency(

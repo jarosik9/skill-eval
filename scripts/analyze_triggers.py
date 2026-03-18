@@ -70,7 +70,8 @@ def analyze_triggers(
     evals_file: str,
     histories_dir: str,
     output_file: str,
-    skill_path: str = None
+    skill_path: str = None,
+    verbose: bool = False
 ) -> dict:
     """
     Main analysis function.
@@ -100,7 +101,7 @@ def analyze_triggers(
         # Find history file
         hist_file = hist_dir / f"eval-{eval_id}.json"
         if not hist_file.exists():
-            print(f"  ⚠️  Missing history: eval-{eval_id} ({hist_file})")
+            print(f"  ⚠️  Missing history: eval-{eval_id} ({hist_file})")  # always show warnings
             missing.append(eval_id)
             continue
 
@@ -118,8 +119,9 @@ def analyze_triggers(
             "category": category,
         })
 
-        status = "✅" if correct else "❌"
-        print(f"  [{eval_id}] {status} expected={expected} triggered={triggered} | '{query[:50]}'")
+        if verbose:
+            status = "✅" if correct else "❌"
+            print(f"  [{eval_id}] {status} expected={expected} triggered={triggered} | '{query[:50]}'")
 
     if not results:
         print("❌ No results — check histories directory")
@@ -177,6 +179,11 @@ def main():
     parser.add_argument("--output", required=True, help="Output trigger_results.json path")
     parser.add_argument("--skill-path", help="Override skill path for trigger detection")
 
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show detailed output per eval (default: summary only)"
+    )
     args = parser.parse_args()
 
     analyze_triggers(
@@ -184,6 +191,7 @@ def main():
         histories_dir=args.histories,
         output_file=args.output,
         skill_path=args.skill_path,
+        verbose=args.verbose,
     )
 
 

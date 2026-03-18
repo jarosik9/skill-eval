@@ -106,6 +106,7 @@ def analyze_quality(
     evals_file: str,
     transcripts_dir: str,
     output_file: str,
+    verbose: bool = False,
 ) -> dict:
     """Main quality analysis."""
     with open(evals_file, encoding="utf-8") as f:
@@ -154,8 +155,9 @@ def analyze_quality(
         }
         results.append(result)
 
-        arrow = "↑" if delta > 0 else ("↓" if delta < 0 else "=")
-        print(f"  [{eval_id}] {name}: with={with_score} vs without={without_score} "
+        if verbose:
+         arrow = "↑" if delta > 0 else ("↓" if delta < 0 else "=")
+         print(f"  [{eval_id}] {name}: with={with_score} vs without={without_score} "
               f"({arrow}{abs(delta)}) | assertions {with_assertions['passed']}/{with_assertions['total']}")
 
     if not results:
@@ -202,12 +204,18 @@ def main():
     parser.add_argument("--transcripts", required=True, help="Directory with eval-{id}-with/without.txt")
     parser.add_argument("--output", required=True, help="Output quality_results.json path")
 
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show detailed output per eval (default: summary only)"
+    )
     args = parser.parse_args()
 
     analyze_quality(
         evals_file=args.evals,
         transcripts_dir=args.transcripts,
         output_file=args.output,
+        verbose=args.verbose,
     )
 
 

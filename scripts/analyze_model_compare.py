@@ -324,6 +324,11 @@ def main():
     parser.add_argument("--models", required=True, help="e.g. haiku,sonnet")
     parser.add_argument("--dimensions", default="quality,speed")
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show detailed output per eval (default: summary only)"
+    )
     args = parser.parse_args()
 
     analyze_model_compare(
