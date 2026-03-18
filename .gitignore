@@ -2,6 +2,11 @@
 workspace/
 eval-workspace/
 
+# Local evals (keep only bundled examples)
+evals/*
+!evals/example-*.json
+!evals/weather/
+
 # Python
 __pycache__/
 *.py[cod]
