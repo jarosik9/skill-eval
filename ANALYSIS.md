@@ -2,7 +2,7 @@
 
 从两个来源提取可复用组件：
 - **OpenClaw 官方 skill-creator**：`/opt/homebrew/lib/node_modules/openclaw/skills/skill-creator/`
-- **Claude Code skill-creator**：`~/.openclaw/workspace/operations/skills/claude-skills/skills/skill-creator/`
+- **Claude Code skill-creator**：`<openclaw-workspace>/skills/skill-creator/`
 
 ---
 
