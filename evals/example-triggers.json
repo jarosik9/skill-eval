@@ -1,73 +1,68 @@
 {
   "name": "example-triggers",
   "description": "Example trigger rate test queries. Replace with queries relevant to your skill.",
-  "skill_keyword": "SKILL.md",
-  "triggers": [
+  "skill_name": "weather",
+  "skill_path": "weather/SKILL.md",
+  "evals": [
     {
-      "id": "tq-1",
-      "query": "I want to use my skill to manage crypto for my AI agent. I have Python 3.10+ installed but nothing else.",
+      "id": 1,
+      "query": "What's the weather in Singapore?",
       "expected": true,
-      "category": "direct_install"
+      "category": "positive_direct"
     },
     {
-      "id": "tq-2",
-      "query": "Set up a the service agent wallet for me in autonomous mode",
+      "id": 2,
+      "query": "Will it rain tomorrow in London?",
       "expected": true,
-      "category": "direct_setup"
+      "category": "positive_direct"
     },
     {
-      "id": "tq-3",
-      "query": "Transfer 1 USDC to 0xRecipient using my my wallet",
+      "id": 3,
+      "query": "Check the temperature in Tokyo",
       "expected": true,
-      "category": "direct_transfer"
+      "category": "positive_direct"
     },
     {
-      "id": "tq-4",
-      "query": "Check my my wallet balance and recent transactions",
+      "id": 4,
+      "query": "I'm going hiking this weekend, what's the forecast?",
       "expected": true,
-      "category": "direct_query"
+      "category": "positive_indirect"
     },
     {
-      "id": "tq-5",
-      "query": "I need to pay for an API call from my agent. The server returned HTTP 402",
+      "id": 5,
+      "query": "Should I bring an umbrella today?",
       "expected": true,
-      "category": "indirect_x402"
+      "category": "positive_indirect"
     },
     {
-      "id": "tq-6",
-      "query": "My crypto transfer is blocked. It says policy denied",
-      "expected": true,
-      "category": "indirect_policy"
-    },
-    {
-      "id": "tq-7",
-      "query": "How does x402 payment protocol work?",
-      "expected": true,
-      "category": "indirect_protocol"
-    },
-    {
-      "id": "tq-8",
-      "query": "My AI agent needs to spend crypto with guardrails",
-      "expected": true,
-      "category": "indirect_agent_wallet"
-    },
-    {
-      "id": "tq-9",
-      "query": "What's the weather today in Singapore?",
+      "id": 6,
+      "query": "What is 2 + 2?",
       "expected": false,
       "category": "negative_unrelated"
     },
     {
-      "id": "tq-10",
-      "query": "Help me write a Python function to sort a list of dictionaries",
+      "id": 7,
+      "query": "Help me write a Python function to sort a list",
       "expected": false,
       "category": "negative_coding"
     },
     {
-      "id": "tq-11",
-      "query": "Tell me about the latest news in AI this week",
+      "id": 8,
+      "query": "What's the capital of France?",
       "expected": false,
-      "category": "negative_news"
+      "category": "negative_trivia"
+    },
+    {
+      "id": 9,
+      "query": "Tell me a joke",
+      "expected": false,
+      "category": "negative_casual"
+    },
+    {
+      "id": 10,
+      "query": "Summarize this article for me",
+      "expected": false,
+      "category": "negative_other_skill"
     }
   ]
 }

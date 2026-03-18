@@ -55,7 +55,7 @@ python scripts/extract_session_history.py \
   "eval_name": "onboarding-setup",
   "source_session_key": "agent:mo9:subagent:abc123def456",
   "conversation_history": [
-    {"role": "user", "content": "Help me set up the wallet"},
+    {"role": "user", "content": "Check the weather in Tokyo"},
     {"role": "assistant", "content": "Let me read SKILL.md first..."},
     {"role": "user", "content": "What's the next step?"}
   ],

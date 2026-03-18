@@ -37,24 +37,24 @@ GRADING_FILES: [{eval_id, eval_name, grading_json_content}, ...]
 
 ```json
 {
-  "skill_name": "cobo-agentic-wallet",
+  "skill_name": "example-skill",
   "iteration": 1,
   "patterns": {
-    "skill_adds_value": ["a1-2 (env URL setup)", "a2-2 (--sponsor false)"],
-    "skill_no_diff": ["a1-1 (pip install — both pass)"],
-    "both_fail": ["a3-1 (dry-run — neither does it)"]
+    "skill_adds_value": ["a1-2 (format selection)", "a2-2 (error handling)"],
+    "skill_no_diff": ["a1-1 (basic query — both pass)"],
+    "both_fail": ["a3-1 (edge case — neither handles it)"]
   },
   "recurring_anomalies": [
-    "hallucination: caw --version (3/3 evals with skill)",
-    "skipped_steps: profile verify not called after onboard (2/3 evals)"
+    "hallucination: non-existent flag --xyz (3/3 evals with skill)",
+    "skipped_steps: verification not called after setup (2/3 evals)"
   ],
   "environment_failures": [
-    "invitation code required — blocks e2/e3, not a skill bug"
+    "API key required — blocks e2/e3, not a skill bug"
   ],
   "consolidated_suggestions": [
-    "[P0] SKILL.md autonomous path: add --invitation-code flag",
-    "[P1] SKILL.md install section: replace caw --version with caw --help"
+    "[P0] SKILL.md setup section: document required environment variables",
+    "[P1] SKILL.md install section: fix incorrect command example"
   ],
-  "summary": "Skill 在 e1 中正确引导了安装和环境配置，核心价值体现在 --sponsor false 和 API URL 设置。主要障碍是 invitation code 未文档化，导致 e2/e3 无法完成。"
+  "summary": "Skill correctly guided basic usage in e1. Core value shown in format selection and error handling. Main obstacle is undocumented API key requirement blocking e2/e3."
 }
 ```

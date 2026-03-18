@@ -25,7 +25,7 @@ Universal skill evaluation framework supporting three test modes:
     {
       "id": 1,
       "name": "onboarding-fresh",
-      "prompt": "Help me set up the wallet",
+      "prompt": "Check the weather in Tokyo",
       "context": "Clean machine. For grader reference only, not injected to agent.",
       "expected_output": "Install → configure → verify",
       "conversation_history": null,
@@ -46,7 +46,7 @@ For trigger tests, use `query` / `expected` fields:
 ```json
 {
   "id": 1,
-  "query": "Help me set up the wallet",
+  "query": "Check the weather in Tokyo",
   "expected": true,
   "category": "positive"
 }

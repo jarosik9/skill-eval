@@ -144,7 +144,7 @@ openclaw-eval-skill/
     {
       "id": 1,
       "name": "onboarding-fresh",
-      "prompt": "Help me set up the wallet",
+      "prompt": "Check the weather in Tokyo",
       "context": "Clean machine, no prior setup. Context for grader only.",
       "expected_output": "Install → configure → verify profile",
       "assertions": [

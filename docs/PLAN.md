@@ -10,7 +10,7 @@
 
 Merges OpenClaw's official skill-creator (structure standards) with Claude Code's skill-creator (eval loop) into a focused **skill evaluation and comparison** tool.
 
-Core use case: iterating on Agent Wallet skill development — testing different skill formulations, different conversation contexts, and their effect on agent behavior.
+Core use case: iterating on skill development — testing different skill formulations, different conversation contexts, and their effect on agent behavior.
 
 ---
 
@@ -176,4 +176,4 @@ Design: PHASE-3-5-DESIGN.md
 1. Complete an A vs B comparison in under 5 minutes
 2. LLM judge scoring agrees with human judgment at >80%
 3. Output format clear, human review frictionless
-4. Reusable for any skill, not limited to Agent Wallet
+4. Reusable for any skill type

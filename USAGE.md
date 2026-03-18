@@ -230,7 +230,7 @@ workspace/
 
 | Variable | Example |
 |----------|---------|
-| `{skill}` | `weather`, `cobo-wallet` |
+| `{skill}` | `weather`, `summarize`, `github` |
 | `{n}` | `1`, `2`, `3` (increment each iteration) |
 | `{id}` | eval's id field |
 | `{model}` | `haiku`, `sonnet`, `opus` |
