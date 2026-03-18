@@ -131,7 +131,7 @@ python scripts/build_evals_with_context.py \
 ### Step 1: 初始评测
 
 ```bash
-cd ~/.openclaw/workspace/operations/openclaw-eval-skill
+cd ~/.openclaw/workspace/skills/openclaw-eval-skill
 
 # 运行初始评测，获得 session keys
 python scripts/run_orchestrator.py \
