@@ -124,7 +124,7 @@ def run(raw_file: str, output_file: str, workers: int = 4) -> None:
     with open(raw_file) as f:
         raw = json.load(f)
 
-    # 保存完整 history 到 output_file 同级的 histories/ 目录
+    # Save full history to histories/ directory alongside output_file
     save_dir = Path(output_file).parent / "histories"
 
     print(f"Analyzing {len(raw)} queries with {workers} workers...")

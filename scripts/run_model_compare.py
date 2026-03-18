@@ -2,10 +2,10 @@
 """
 Model Comparison — Phase 3.4
 
-对比不同模型在同一 skill 上的 Quality + Speed 表现。
+Compare Quality + Speed across models for the same skill.
 
 Usage:
-    # Quality + Speed（完整评测）
+    # Quality + Speed (full eval)
     python scripts/run_model_compare.py \
         --evals evals/example-quality.json \
         --skill-path ./SKILL.md \
@@ -15,7 +15,7 @@ Usage:
         --output-dir workspace/model-compare-1 \
         --workers 6
 
-    # 仅 Quality（快速）
+    # Quality only (fast)
     python scripts/run_model_compare.py \
         --evals evals/example-quality.json \
         --skill-path ./SKILL.md \

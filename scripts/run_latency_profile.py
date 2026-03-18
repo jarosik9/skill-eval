@@ -2,17 +2,17 @@
 """
 Latency Profiling — Phase 3.5
 
-分析 skill 执行速度：p50/p90、稳定性、步骤级瓶颈。
+Analyze skill execution speed: p50/p90, stability, step-level bottlenecks.
 
 Usage:
-    # 基础：总时长分布（默认 5 次运行）
+    # Basic: total latency distribution (default 5 runs)
     python scripts/run_latency_profile.py \
         --evals evals/example-quality.json \
         --skill-path ./SKILL.md \
         --n-runs 5 \
         --output-dir workspace/latency-1
 
-    # 深度：步骤级分析
+    # Deep: step-level analysis
     python scripts/run_latency_profile.py \
         --evals evals/example-quality.json \
         --skill-path ./SKILL.md \
@@ -20,7 +20,7 @@ Usage:
         --step-level \
         --output-dir workspace/latency-1
 
-    # 多模型速度对比（结合 Phase 3.4）
+    # Multi-model speed comparison (pairs with Phase 3.4)
     python scripts/run_latency_profile.py \
         --evals evals/example-quality.json \
         --skill-path ./SKILL.md \

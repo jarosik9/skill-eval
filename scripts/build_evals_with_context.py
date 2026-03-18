@@ -2,20 +2,20 @@
 """
 Build evals with conversation_history by merging extracted histories.
 
-Phase 3.3a 实现：从真实 session 提取的历史，集成到 evals.json
+Phase 3.3a: integrate real session histories into evals.json
 
-使用流程：
-1. run_orchestrator.py 生成评测结果，记录 session key
-2. extract_session_history.py 从 session 提取历史
-3. build_evals_with_context.py 将历史合并到 evals.json
+Usage flow:
+1. Run evaluations with run_orchestrator.py, record session keys
+2. Extract history from sessions using extract_session_history.py
+3. Merge histories into evals.json using this script
 
 Usage:
-    # Step 1: 运行评测，记录各 eval 的 session key
+    # Step 1: run evaluations, record session keys per eval
     python scripts/run_orchestrator.py \
         --evals evals/example-quality.json \
         --output-dir workspace/iter-1
     
-    # Step 2: 创建 histories 目录，手工分组提取的历史
+    # Step 2: create histories dir, extract and group histories
     mkdir -p evals/histories
     python scripts/extract_session_history.py \
         --session-key "agent:...:subagent:uuid1" \
@@ -27,7 +27,7 @@ Usage:
         --eval-id 2 \
         --output-file evals/histories/eval-2-with-context.json
     
-    # Step 3: 合并到 evals.json
+    # Step 3: merge histories into evals.json
     python scripts/build_evals_with_context.py \
         --base-evals evals/example-quality.json \
         --histories evals/histories \
@@ -86,8 +86,8 @@ def build_evals_with_context(
     Build new evals with conversation histories.
     
     Strategies:
-    - "parallel": 为每个 eval 创建两个版本（fresh + with-context）
-    - "merged": 只为有历史的 eval 创建 with-context 版本
+    - "parallel": create two versions per eval (fresh + with-context)
+    - "merged": only create with-context version for evals that have history
     """
     
     result = {
@@ -98,16 +98,16 @@ def build_evals_with_context(
     for eval_item in base_evals.get("evals", []):
         eval_id = eval_item.get("id")
         
-        # 1. 保留原有 eval（fresh）
+        # 1. Keep original eval (fresh)
         eval_fresh = eval_item.copy()
         eval_fresh["conversation_history"] = None
         eval_fresh["variant"] = "fresh"
         result["evals"].append(eval_fresh)
         
-        # 2. 如果有历史，创建 with-context 版本
+        # 2. If history exists, create with-context variant
         if eval_id in histories:
             eval_with_context = eval_item.copy()
-            eval_with_context["id"] = eval_id * 10 + 1  # ID 命名规则：original * 10 + 1
+            eval_with_context["id"] = eval_id * 10 + 1  # ID convention: original * 10 + 1
             eval_with_context["name"] = eval_item.get("name", "") + "-with-context"
             eval_with_context["conversation_history"] = histories[eval_id]
             eval_with_context["variant"] = "with-context"

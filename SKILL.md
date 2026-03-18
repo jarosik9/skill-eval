@@ -1,20 +1,20 @@
 ---
 name: openclaw-eval-skill
-description: "OpenClaw Skill 评测框架。Use when: 需要评测任何 OpenClaw skill 的质量——测试 description 触发准确率（trigger rate）、对比 with/without skill 的输出质量（quality compare）、或用 LLM-as-judge 自动评分。适用于任何类型的 skill（CLI 工具、对话型、API 集成等）。不依赖 claude CLI，通过 sessions_spawn + sessions_history 运行。支持并发 evaluation（6-8 worker 并行，性能提升 5-10x）。触发词：评测 skill、benchmark、trigger rate、quality compare、A/B 对比、skill 效果怎么样。NOT for: 调试单次对话、不涉及 skill 评测的一般测试任务。"
+description: "OpenClaw Skill evaluation framework. Use when: evaluating any OpenClaw skill quality — testing description trigger rate, comparing with/without skill output quality (quality compare), or running LLM-as-judge scoring. Works with any skill type (CLI tools, conversational, API integrations). No claude CLI dependency — runs via sessions_spawn + sessions_history. Supports parallel evaluation (6-8 workers, 5-10x performance gain). Trigger words: evaluate skill, benchmark, trigger rate, quality compare, A/B compare, skill effectiveness, skill evaluation. NOT for: debugging a single conversation, general testing tasks unrelated to skill evaluation."
 ---
 
 # openclaw-eval-skill
 
-任何 OpenClaw skill 都可以用这个框架评测。不依赖 claude CLI，所有 agent 执行通过 `sessions_spawn` + `sessions_history` 完成。
+Evaluation framework for any OpenClaw skill. No claude CLI dependency — all agent execution runs through `sessions_spawn` + `sessions_history`.
 
-**适用范围**：CLI 工具型、对话型、API 集成型 skill 均可，assertions 按需选择类型。
+**Scope**: Works with CLI tool skills, conversational skills, and API integration skills. Assertions are chosen based on skill type.
 
 ---
 
-## 快速开始（5 分钟）
+## Quick Start (5 minutes)
 
 ```bash
-# 1. 运行整个评测流程（并发）
+# Run the full evaluation pipeline (parallel)
 python scripts/run_orchestrator.py \
     --evals evals/example-quality.json \
     --skill-path /path/to/SKILL.md \
@@ -22,7 +22,7 @@ python scripts/run_orchestrator.py \
     --output-dir workspace/iteration-1 \
     --workers 6
 
-# 输出：eval-workspace/workspace/iteration-1/
+# Output: workspace/iteration-1/
 #   ├── compare_results_raw.json
 #   ├── eval-{id}-{name}/
 #   │   ├── with_skill_full_history.json
@@ -32,53 +32,52 @@ python scripts/run_orchestrator.py \
 #   └── [ready for grading]
 ```
 
-**时间**: 
-- 5 evals × 2 variant（compare）+ 5 evals（trigger）= 15 tasks
-- 顺序：75s → 并发（6 workers）：12s（**6x faster**）
+**Time**: 5 evals × 2 variants (compare) + 5 evals (trigger) = 15 tasks  
+Sequential: 75s → Parallel (6 workers): 12s (**6x faster**)
 
 ---
 
-## 三种测试模式
+## Three Evaluation Modes
 
-| Mode | 测什么 | 核心机制 |
-|------|--------|----------|
-| **Trigger Rate** | skill description 触发准确率 | spawn subagents + `sessions_history` tool_use 检测 |
-| **Quality Compare** | with skill vs without skill 输出质量 | spawn 两组 subagents + grader subagent 评分 |
-| **Aggregate** | 综合报告 | `scripts/aggregate_benchmark.py` |
-
----
-
-## 核心原则
-
-1. **不修改评测对象** — 只观察，不改动被测 skill 任何文件。给出分级建议，不直接修改
-2. **eval 记录放 workspace** — 所有产出写入 `<workspace>/eval-workspace/<skill-name>/iteration-N/`，不污染 skill 本体
-3. **evals.json 跨 iteration 共享** — 定义放 `eval-workspace/<skill-name>/evals.json`；每次跑时复制一份 `evals-snapshot.json` 到 iteration 目录作历史记录
-4. **完整记录** — 保存 `full_history.json`（含所有 tool_use + tool_result），不只是最终文本
+| Mode | Tests | Core Mechanism |
+|------|-------|----------------|
+| **Trigger Rate** | Description trigger accuracy | spawn subagents + `sessions_history` tool_use detection |
+| **Quality Compare** | with skill vs without skill output quality | spawn two groups + grader subagent scoring |
+| **Aggregate** | Combined report | `scripts/aggregate_benchmark.py` |
 
 ---
 
-## agents/ 说明
+## Core Principles
 
-| 文件 | 用途 | 使用时机 |
-|------|------|---------|
-| `grader.md` | 逐条检查 assertions，记录行为异常，给出分级建议 | **主流程**：每个 eval 必用 |
-| `comparator.md` | 盲测对比，不看 assertions，纯判断哪个输出更好 | **辅助**：想要无偏对比时用，或 assertions 无法覆盖主观质量时 |
-| `analyzer.md` | 跑完所有 eval 后，分析跨 eval 的模式和异常 | **事后分析**：所有 grading 完成后，生成整体洞察 |
-
-通常顺序：grader（每个 eval）→ analyzer（所有 eval 完成后）。comparator 可选，用于补充 grader 无法捕捉的整体质量判断。
+1. **Never modify the evaluated skill** — observe only, give recommendations, don't edit skill files directly
+2. **Keep eval records in workspace** — all output goes to `<workspace>/eval-workspace/<skill-name>/iteration-N/`, never pollutes the skill itself
+3. **evals.json is shared across iterations** — definition lives at `eval-workspace/<skill-name>/evals.json`; each run saves a `evals-snapshot.json` to the iteration directory
+4. **Keep full records** — save `full_history.json` (including all tool_use + tool_result), not just the final text
 
 ---
 
-## 标准目录结构
+## agents/ Reference
+
+| File | Purpose | When to Use |
+|------|---------|-------------|
+| `grader.md` | Check assertions item by item, record behavior anomalies, give priority recommendations | **Main flow**: required for every eval |
+| `comparator.md` | Blind comparison — no assertions, purely judge which output is better | **Supplementary**: when unbiased comparison is needed, or assertions can't capture subjective quality |
+| `analyzer.md` | After all evals complete, analyze cross-eval patterns and anomalies | **Post-analysis**: after all grading is done |
+
+Typical order: grader (per eval) → analyzer (after all evals). comparator is optional.
+
+---
+
+## Standard Directory Structure
 
 ```
 eval-workspace/<skill-name>/
-├── evals.json                          ← 测试用例定义（跨 iteration 共享）
+├── evals.json                           ← Eval definition (shared across iterations)
 └── iteration-1/
-    ├── evals-snapshot.json             ← 本次使用的 evals.json 快照
-    ├── eval-report.md                  ← 评测报告（assertions + 问题分级 + 修改建议）
+    ├── evals-snapshot.json              ← Snapshot of evals.json used this run
+    ├── eval-report.md                   ← Evaluation report (assertions + priority + recommendations)
     └── histories/
-        ├── e1_with_full_history.json   ← with skill，完整 tool calls + 输出
+        ├── e1_with_full_history.json    ← with skill: full tool calls + output
         ├── e1_without_full_history.json
         └── ...
 ```
@@ -87,9 +86,9 @@ eval-workspace/<skill-name>/
 
 ## Mode 1: Trigger Rate
 
-**检测原理**：`sessions_history(includeTools=True)` 扫描 tool_use block，`name=Read`，`path` 包含 `SKILL.md` → triggered=True。这是 ground truth，不是意图推断。
+**Detection**: `sessions_history(includeTools=True)` scans tool_use blocks. `name=Read`, `path` contains `SKILL.md` → `triggered=True`. This is ground truth, not intent inference.
 
-**One-liner（推荐）**：
+**One-liner (recommended)**:
 ```bash
 python scripts/run_orchestrator.py \
     --evals evals/example-triggers.json \
@@ -99,29 +98,29 @@ python scripts/run_orchestrator.py \
     --workers 6
 ```
 
-**手工步骤（如需调试）**：
+**Manual steps (for debugging)**:
 
-### Step 1: Orchestrator spawn subagents (并发)
+### Step 1: Spawn subagents (parallel)
 
-对 `evals/example-triggers.json` 里每个 query：
+For each query in `evals/example-triggers.json`:
 ```python
-# cleanup="keep" 必须，history 要保留用于分析
+# cleanup="keep" required — history must be retained for analysis
 session_key = sessions_spawn(
     task=query,
     sandbox="inherit",
     cleanup="keep",
     mode="run"
 )
-# 并发执行，ThreadPoolExecutor(max_workers=6)
-# sessions_yield 等完成，记录 session_key
+# Parallel execution via ThreadPoolExecutor(max_workers=6)
+# Use sessions_yield to wait for completion, record session_key
 ```
 
-输出格式 `trigger_results_raw.json`：
+Output format `trigger_results_raw.json`:
 ```json
 [{"id": "tq-1", "query": "...", "expected": true, "session_key": "agent:...:subagent:uuid"}]
 ```
 
-### Step 2: 分析 history（并发）
+### Step 2: Analyze history (parallel)
 
 ```bash
 python scripts/run_trigger.py \
@@ -130,13 +129,13 @@ python scripts/run_trigger.py \
     --workers 6
 ```
 
-性能：10 queries × 4-6 workers → 30s 而非 3 分钟（10x faster）
+Performance: 10 queries × 4-6 workers → 30s vs 3 minutes (10x faster)
 
 ---
 
 ## Mode 2: Quality Compare
 
-**One-liner（推荐）**：
+**One-liner (recommended)**:
 ```bash
 python scripts/run_orchestrator.py \
     --evals evals/example-quality.json \
@@ -146,27 +145,27 @@ python scripts/run_orchestrator.py \
     --workers 6
 ```
 
-**手工步骤（如需调试）**：
+**Manual steps (for debugging)**:
 
-### Step 1: Orchestrator spawn 两组 subagents（并发）
+### Step 1: Spawn two groups of subagents (parallel)
 
-对每个 eval，并发生成 with_skill + without_skill 两个 variant：
+For each eval, spawn with_skill + without_skill variants concurrently:
 ```python
-# with_skill：显式引导读取 SKILL.md
+# with_skill: explicitly guided to read SKILL.md
 with_key = sessions_spawn(
-    task=f"请先读 <skill_path>/SKILL.md，然后执行：\n\n{prompt}\n\n背景：{context}",
+    task=f"Please first read <skill_path>/SKILL.md, then execute:\n\n{prompt}\n\nContext: {context}",
     sandbox="inherit", cleanup="keep", mode="run"
 )
 
-# without_skill：直接 prompt，无 skill 提示
+# without_skill: direct prompt, no skill guidance
 without_key = sessions_spawn(
     task=prompt,
     sandbox="inherit", cleanup="keep", mode="run"
 )
-# 并发执行，ThreadPoolExecutor(max_workers=6)
+# Parallel via ThreadPoolExecutor(max_workers=6)
 ```
 
-### Step 2: 整理 transcripts（并发）
+### Step 2: Extract transcripts (parallel)
 
 ```bash
 python scripts/run_compare.py \
@@ -176,22 +175,22 @@ python scripts/run_compare.py \
     --workers 6
 ```
 
-`compare_results_raw.json` 格式：
+`compare_results_raw.json` format:
 ```json
 [{"eval_id": 1, "eval_name": "onboarding",
   "with_skill_session": "agent:...", "without_skill_session": "agent:..."}]
 ```
 
-脚本产出：
-- `eval-{id}-{name}/with_skill_full_history.json` — 完整 history（含 tool calls）
-- `eval-{id}-{name}/with_skill_transcript.txt` — 完整 transcript（含所有 tool calls，grader 用）
-- `eval-{id}-{name}/metadata.json` — eval 定义 + assertions
+Script output:
+- `eval-{id}-{name}/with_skill_full_history.json` — full history (including tool calls)
+- `eval-{id}-{name}/with_skill_transcript.txt` — full transcript (for grader)
+- `eval-{id}-{name}/metadata.json` — eval definition + assertions
 
-性能：5 evals × 2 variant × 4-6 workers → 40s 而非 5 分钟（7x faster）
+Performance: 5 evals × 2 variants × 4-6 workers → 40s vs 5 minutes (7x faster)
 
-### Step 3: Grader subagent 评分
+### Step 3: Grader subagent scoring
 
-对每个 eval，spawn grader subagent，task 用 `agents/grader.md` 模板填入 assertions + 两段对话。收到结果后写入 `eval-{id}-{name}/grading.json`。
+For each eval, spawn a grader subagent using `agents/grader.md` template filled with assertions + both transcripts. Write result to `eval-{id}-{name}/grading.json`.
 
 ---
 
@@ -206,7 +205,7 @@ python scripts/aggregate_benchmark.py \
 
 ---
 
-## evals.json 格式
+## evals.json Format
 
 ```json
 {
@@ -245,63 +244,74 @@ python scripts/aggregate_benchmark.py \
 }
 ```
 
----
-
-## Assertion 类型
-
-适用于任何 skill 类型（CLI、API、对话）。
-
-| 类型 | 判断方式 |
-|------|---------|
-| `output_contains` / `cli_log_contains` | 值出现在 conversation 或 tool 输出里 |
-| `output_not_contains` / `cli_log_not_contains` | 值不出现 |
-| `output_count_max` | 出现次数 ≤ max |
-| `env_or_export_in_log` | 变量名出现在任何 export/setenv/env 命令里 |
-| `tool_called` | 特定工具被调用至少一次 |
-| `tool_not_called` | 特定工具未被调用 |
-| `conversation_contains` | 值出现在 with_skill 对话任意位置 |
-| `conversation_not_contains` | 值不出现 |
-| `conversation_contains_any` | 至少一个值出现 |
-| `conversation_not_contains_any` | 所有值都不出现 |
-
-**Priority assertions**：任一 fail → overall=FAIL，无论分数。  
-**Gap assertions**（`"note": "Best practice..."`）：fail = skill 设计缺口，不是 Claude 执行错误。
-
----
-
-## 问题分级（grader 输出格式）
-
-```
-🔴 P0 Critical  — 核心功能完全失效
-🟠 P1 High      — 明显影响使用体验
-🟡 P2 Medium    — 有改进空间但可接受
-🟢 P3 Low       — 细节优化
+For trigger tests:
+```json
+{
+  "id": 1,
+  "name": "direct-weather",
+  "query": "What's the weather in Singapore?",
+  "expected": true,
+  "category": "positive"
+}
 ```
 
-每条建议格式：`[P0] <文件>: <具体修改内容>`
+---
 
-Grader **只给建议，不直接修改**被测 skill。
+## Assertion Types
+
+Works for any skill type (CLI, API, conversational).
+
+| Type | Detection Method |
+|------|-----------------|
+| `output_contains` / `cli_log_contains` | Value appears in conversation or tool output |
+| `output_not_contains` / `cli_log_not_contains` | Value does not appear |
+| `output_count_max` | Occurrences ≤ max |
+| `env_or_export_in_log` | Variable name appears in any export/setenv/env command |
+| `tool_called` | Specific tool called at least once |
+| `tool_not_called` | Specific tool not called |
+| `conversation_contains` | Value appears anywhere in with_skill conversation |
+| `conversation_not_contains` | Value does not appear |
+| `conversation_contains_any` | At least one value appears |
+| `conversation_not_contains_any` | All values do not appear |
+
+**Priority assertions**: any failure → overall=FAIL, regardless of score.  
+**Gap assertions** (`"note": "Best practice..."`): failure = skill design gap, not a Claude execution error.
 
 ---
 
-## Agent 行为异常记录
+## Issue Priority (grader output format)
 
-除 assertions 外，grader 还需记录以下行为（比 pass/fail 更有诊断价值）：
+```
+🔴 P0 Critical  — Core functionality completely broken
+🟠 P1 High      — Significantly impacts usability
+🟡 P2 Medium    — Room for improvement but acceptable
+🟢 P3 Low       — Minor polish
+```
 
-| 字段 | 触发条件 |
-|------|---------|
-| `path_corrections` | 用了错误路径后自我修正 |
-| `retry_count` | 同一命令执行多次 |
-| `missing_file_reads` | 尝试读取不存在的文件 |
-| `tool_arg_errors` | 工具调用参数错误 |
-| `skipped_steps` | skill 明确要求的步骤未执行 |
-| `hallucinations` | 编造了不存在的命令/参数/API |
+Each recommendation format: `[P0] <file>: <specific change>`
+
+Grader **gives recommendations only, does not modify** the evaluated skill.
 
 ---
 
-## 关键约束
+## Behavior Anomaly Tracking
 
-- **`sandbox="inherit"`** — subagent 需要继承 skill 注册环境
-- **`cleanup="keep"`** — history 必须保留用于 trigger 检测
-- **不依赖 claude CLI** — 所有 subagent 通过 sessions_spawn 运行
-- skill 注册：放入 `skills.load.extraDirs` 下的实体目录（symlink 被安全检查拒绝）
+In addition to assertions, grader records these behavior signals (often more diagnostic than pass/fail):
+
+| Field | Trigger Condition |
+|-------|------------------|
+| `path_corrections` | Used wrong path then self-corrected |
+| `retry_count` | Same command executed multiple times |
+| `missing_file_reads` | Attempted to read non-existent files |
+| `tool_arg_errors` | Tool called with incorrect arguments |
+| `skipped_steps` | Steps explicitly required by skill were not executed |
+| `hallucinations` | Fabricated non-existent commands/parameters/APIs |
+
+---
+
+## Key Constraints
+
+- **`sandbox="inherit"`** — subagents must inherit skill registration environment
+- **`cleanup="keep"`** — history must be retained for trigger detection
+- **No claude CLI dependency** — all subagents run via `sessions_spawn`
+- Skill registration: place in a real directory under `skills.load.extraDirs` (symlinks rejected by security check)

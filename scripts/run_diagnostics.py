@@ -2,8 +2,8 @@
 """
 Description Diagnostics — Phase 3.2
 
-诊断 skill description 的质量问题，输出分级建议。
-不自动优化（避免局部最优），诊断 + 人类决策。
+Diagnose skill description quality issues, output prioritized recommendations.
+No automatic optimization (avoids local optimum) — diagnose + human decision.
 
 Usage:
     python scripts/run_diagnostics.py \
@@ -12,7 +12,7 @@ Usage:
         --trigger-results workspace/iter-1/trigger_rate_results.json \
         --output-dir workspace/diagnostics-1
 
-    # 如果没有已有的 trigger results，先运行 trigger test
+    # If no existing trigger results, run trigger test first
     python scripts/run_trigger.py \
         --evals evals/example-triggers.json \
         --output workspace/trigger_results.json
@@ -113,9 +113,9 @@ def evaluate_clarity(description: str) -> float:
     # USE WHEN section
     use_when_patterns = [
         r"use when",
-        r"触发词",
+        r"trigger",
         r"when to use",
-        r"适用",
+        r"use when",
     ]
     if any(re.search(p, description, re.IGNORECASE) for p in use_when_patterns):
         score += 0.3
@@ -123,8 +123,8 @@ def evaluate_clarity(description: str) -> float:
     # NOT FOR section
     not_for_patterns = [
         r"not for",
-        r"不适用",
-        r"不要用",
+        r"not for",
+        r"avoid",
         r"avoid",
     ]
     if any(re.search(p, description, re.IGNORECASE) for p in not_for_patterns):

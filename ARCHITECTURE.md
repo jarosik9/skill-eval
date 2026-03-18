@@ -1,12 +1,12 @@
-# OpenClaw Eval Skill 架构文档
+# OpenClaw Eval Skill Architecture
 
-**版本**：v0.4（2026-03-18）
+**Version**: v0.4 (2026-03-18)
 
 ---
 
-## 三维度评测框架
+## Three-Dimension Evaluation Framework
 
-所有 skill 评测统一使用三个维度：
+All skill evaluations use three unified dimensions:
 
 ```
                     ┌─────────────────────────────────┐
@@ -17,7 +17,7 @@
            ▼                       ▼                       ▼
     ┌─────────────┐         ┌─────────────┐         ┌─────────────┐
     │   Quality   │         │   Speed     │         │    Cost     │
-    │   (效果)    │         │   (速度)    │         │   (成本)    │
+    │  (outcome)  │         │  (latency)  │         │  (tokens)   │
     └─────────────┘         └─────────────┘         └─────────────┘
            │                       │                       │
     ┌──────┴──────┐         ┌──────┴──────┐         ┌──────┴──────┐
@@ -29,19 +29,19 @@
     └─────────────┘         └─────────────┘         └─────────────┘
 ```
 
-### 维度定义
+### Dimension Definitions
 
-| 维度 | 回答的问题 | 核心指标 | 状态 |
-|------|-----------|----------|------|
-| **Quality** | skill 能不能完成任务？ | trigger_rate, quality_score | ✅ 已实现 |
-| **Speed** | skill 跑得快不快？稳不稳？ | p50, p90, std_dev | 📋 设计完成 |
-| **Cost** | skill 花多少钱？ | tokens, $/1k evals | 🔮 暂缓 |
+| Dimension | Question Answered | Key Metrics | Status |
+|-----------|-------------------|-------------|--------|
+| **Quality** | Can the skill complete the task? | trigger_rate, quality_score | ✅ Implemented |
+| **Speed** | Is the skill fast and stable? | p50, p90, std_dev | 📋 Design complete |
+| **Cost** | How much does the skill cost to run? | tokens, $/1k evals | 🔮 Deferred |
 
 ---
 
-## 统一数据结构
+## Unified Data Structures
 
-### EvalResult（单次评测结果）
+### EvalResult (single evaluation result)
 
 ```python
 @dataclass
@@ -49,14 +49,14 @@ class EvalResult:
     eval_id: int
     eval_name: str
     model: str
-    
-    # Quality 维度
+
+    # Quality dimension
     quality: QualityMetrics
-    
-    # Speed 维度
+
+    # Speed dimension
     speed: SpeedMetrics
-    
-    # Cost 维度（暂缓）
+
+    # Cost dimension (deferred)
     cost: Optional[CostMetrics] = None
 
 @dataclass
@@ -70,12 +70,12 @@ class QualityMetrics:
 
 @dataclass
 class SpeedMetrics:
-    latency_seconds: float        # 单次
-    p50: Optional[float]          # 多次运行
+    latency_seconds: float        # single run
+    p50: Optional[float]          # across multiple runs
     p90: Optional[float]
     std_dev: Optional[float]
     stable: bool                  # std_dev < 3s
-    bottleneck: Optional[str]     # step-level 分析结果
+    bottleneck: Optional[str]     # step-level analysis result
 
 @dataclass
 class CostMetrics:
@@ -85,7 +85,7 @@ class CostMetrics:
     cost_per_1k_evals: float
 ```
 
-### ComparisonMatrix（跨模型对比）
+### ComparisonMatrix (cross-model comparison)
 
 ```python
 @dataclass
@@ -94,11 +94,11 @@ class ComparisonMatrix:
     models: list[str]
     dimensions: list[str]         # ["quality", "speed"]
     timestamp: str
-    
-    # 每个 (eval, model) 组合的完整结果
+
+    # Full results for each (eval, model) combination
     results: dict[tuple[int, str], EvalResult]
-    
-    # 汇总统计
+
+    # Aggregated statistics
     summary: dict[str, ModelSummary]
 
 @dataclass
@@ -112,64 +112,68 @@ class ModelSummary:
 
 ---
 
-## 工具分层
+## Tool Layering
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    run_orchestrator.py                          │
-│                    （入口 + 调度）                                │
+│                    (entry point + dispatcher)                   │
 └─────────────────────────────────────────────────────────────────┘
                                 │
         ┌───────────────────────┼───────────────────────┐
         ▼                       ▼                       ▼
-┌───────────────┐       ┌───────────────┐       ┌───────────────┐
-│ run_compare   │       │ run_trigger   │       │run_model_compare│
-│ (A vs B)      │       │ (触发率)      │       │ (跨模型+维度)  │
-└───────────────┘       └───────────────┘       └───────────────┘
+┌───────────────┐       ┌───────────────┐       ┌────────────────────┐
+│ run_compare   │       │ run_trigger   │       │ run_model_compare  │
+│ (A vs B)      │       │ (trigger rate)│       │ (cross-model+dim)  │
+└───────────────┘       └───────────────┘       └────────────────────┘
         │                       │                       │
         └───────────────────────┼───────────────────────┘
                                 ▼
                     ┌───────────────────────┐
                     │     spawn_eval()      │
-                    │    (核心执行单元)      │
+                    │  (core execution unit)│
                     └───────────────────────┘
                                 │
                     ┌───────────┴───────────┐
                     ▼                       ▼
             ┌─────────────┐         ┌─────────────┐
             │   grader    │         │   profiler  │
-            │ (质量评分)   │         │ (速度统计)  │
+            │(quality score)│       │(speed stats)│
             └─────────────┘         └─────────────┘
 ```
 
-### 工具职责
+### Tool Responsibilities
 
-| 工具 | 输入 | 输出 | 维度 |
-|------|------|------|------|
-| `run_compare.py` | evals + skill A/B | quality 对比 | Quality |
+| Tool | Input | Output | Dimension |
+|------|-------|--------|-----------|
+| `run_compare.py` | evals + skill A/B | quality comparison | Quality |
 | `run_trigger.py` | evals + skill | trigger_rate | Quality |
-| `run_model_compare.py` | evals + skill + models | 跨模型矩阵 | Quality + Speed |
-| `run_diagnostics.py` | trigger_results + skill | 诊断报告 | Quality（深入） |
-| `run_latency_profile.py` | evals + skill | 速度分析 | Speed（深入） |
+| `run_model_compare.py` | evals + skill + models | cross-model matrix | Quality + Speed |
+| `run_diagnostics.py` | trigger_results + skill | diagnostics report | Quality (deep) |
+| `run_latency_profile.py` | evals + skill | speed analysis | Speed (deep) |
+| `analyze_triggers.py` | pre-fetched histories | trigger metrics | Quality (v2) |
+| `analyze_quality.py` | pre-fetched transcripts | quality scores | Quality (v2) |
+| `analyze_model_compare.py` | pre-fetched multi-model data | model matrix | Quality + Speed (v2) |
+| `analyze_latency.py` | pre-saved timings | p50/p90 stats | Speed (v2) |
 
 ---
 
-## Phase 与维度的映射
+## Phase-to-Dimension Mapping
 
-| Phase | 维度覆盖 | 深度 | 场景 |
-|-------|---------|------|------|
-| **3.1** Parallel | - | - | 加速执行 |
-| **3.2** Diagnostics | Quality | 深 | description 诊断 |
-| **3.4** Model Compare | Quality + Speed | 广 | 模型选择 |
-| **3.5** Latency Profile | Speed | 深 | 瓶颈定位 |
+| Phase | Dimensions | Depth | Use Case |
+|-------|------------|-------|----------|
+| **3.1** Parallel | - | - | Accelerated execution |
+| **3.2** Diagnostics | Quality | Deep | Description health diagnostics |
+| **3.4** Model Compare | Quality + Speed | Broad | Model selection |
+| **3.5** Latency Profile | Speed | Deep | Bottleneck identification |
 
-**设计原则**：
-- 3.4 做广度（多维度，多模型）
-- 3.2 / 3.5 做深度（单维度，深入分析）
+**Design principles**:
+- 3.4 covers breadth (multiple dimensions, multiple models)
+- 3.2 / 3.5 cover depth (single dimension, deep analysis)
 
 ---
 
-## 输出文件约定
+## Output File Conventions
 
 ```
 workspace/
@@ -177,18 +181,15 @@ workspace/
 │   ├── eval-{id}-{name}/
 │   │   ├── with_skill_transcript.txt
 │   │   ├── without_skill_transcript.txt
-│   │   └── timing.json              # 包含 speed 数据
+│   │   └── timing.json              # contains speed data
 │   ├── trigger_rate_results.json    # Quality: trigger
 │   ├── quality_scores.json          # Quality: grader
 │   └── benchmark.md
 │
 ├── model-compare-{N}/
-│   ├── compare_matrix.json          # 完整矩阵
-│   ├── model_comparison_report.md   # 人类可读
+│   ├── compare_matrix.json          # full matrix
+│   ├── model_comparison_report.md   # human-readable
 │   └── raw/
-│       ├── eval-1-haiku-transcript.txt
-│       ├── eval-1-sonnet-transcript.txt
-│       └── ...
 │
 ├── diagnostics-{N}/
 │   ├── diagnosis.json
@@ -201,48 +202,49 @@ workspace/
 
 ---
 
-## CLI 参数约定
+## CLI Parameter Conventions
 
-### 通用参数
+### Common Parameters
 
 ```bash
---evals         # evals.json 路径
---skill-path    # SKILL.md 路径
---output-dir    # 输出目录
---workers       # 并发数（默认 6）
+--evals         # path to evals.json
+--skill-path    # path to SKILL.md
+--output-dir    # output directory
+--workers       # concurrency (default 6)
 ```
 
-### 维度相关参数
+### Dimension-Specific Parameters
 
 ```bash
---dimensions quality,speed    # 选择评测维度（3.4）
---n-runs 5                    # speed 维度需要多次运行
---models haiku,sonnet,opus    # 模型列表
---step-level                  # speed 深度分析（3.5）
+--dimensions quality,speed    # select evaluation dimensions (Phase 3.4)
+--n-runs 5                    # speed dimension requires multiple runs
+--models haiku,sonnet,opus    # model list
+--step-level                  # deep speed analysis (Phase 3.5)
 ```
 
 ---
 
-## 扩展点
+## Extension Points
 
-### 添加新维度
+### Adding a New Dimension
 
-1. 在 `EvalResult` 添加新的 metrics dataclass
-2. 在 `spawn_eval()` 里收集数据
-3. 在输出报告里添加对应 section
+1. Add a new metrics dataclass to `EvalResult`
+2. Collect data inside `spawn_eval()`
+3. Add a corresponding section to the output report
 
-### 添加新工具
+### Adding a New Tool
 
-1. 复用 `spawn_eval()` 核心函数
-2. 实现特定的分析逻辑
-3. 输出符合约定的 JSON + Markdown
+1. Reuse the `spawn_eval()` core function
+2. Implement dimension-specific analysis logic
+3. Output JSON + Markdown conforming to the conventions above
 
 ---
 
-## 版本历史
+## Version History
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
-| v0.1 | 2026-03-17 | 初始设计，单一 quality 维度 |
-| v0.3 | 2026-03-18 | 并发执行 |
-| v0.4 | 2026-03-18 | 三维度框架（Quality + Speed + Cost） |
+| Version | Date | Changes |
+|---------|------|---------|
+| v0.1 | 2026-03-17 | Initial design, single quality dimension |
+| v0.3 | 2026-03-18 | Concurrent execution |
+| v0.4 | 2026-03-18 | Three-dimension framework (Quality + Speed + Cost) |
+| v0.5 | 2026-03-18 | Two-layer architecture (agent + scripts) |

@@ -2,7 +2,7 @@
 """
 Extract conversation history from a completed session.
 
-用于 Phase 3.3：从真实 session 提取对话历史，用于后续对比测试。
+Phase 3.3 tool: extract conversation history from a real session for context testing.
 
 Usage:
     python extract_session_history.py \
@@ -26,7 +26,7 @@ def extract_history_from_session(session_key: str) -> list:
     
     history_data = invoke("sessions_history", {
         "sessionKey": session_key,
-        "includeTools": False  # 只要文本对话，不要 tool calls
+        "includeTools": False  # text conversation only, skip tool calls
     })
     
     messages = history_data.get("messages", [])
@@ -35,22 +35,22 @@ def extract_history_from_session(session_key: str) -> list:
     for msg in messages:
         role = msg.get("role")
         
-        # 只保留 user/assistant 消息
+        # Keep only user/assistant messages
         if role not in ("user", "assistant"):
             continue
         
-        # 处理 content（可能是字符串或对象列表）
+        # Handle content (may be string or list)
         content = msg.get("content", "")
         
         if isinstance(content, str):
-            # 直接是字符串
+            # Direct string content
             if content.strip():
                 conversation.append({
                     "role": role,
                     "content": content
                 })
         elif isinstance(content, list):
-            # content 是数组，提取所有文本块
+            # Content is array, extract all text blocks
             text_parts = []
             for block in content:
                 if isinstance(block, dict):
