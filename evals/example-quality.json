@@ -1,0 +1,213 @@
+{
+  "name": "example-quality-eval",
+  "version": "1.0",
+  "description": "Example quality eval scenarios. Replace with your skill-specific prompts and assertions.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "autonomous-onboarding-no-context",
+      "prompt": "I want to set up a wallet for my AI agent",
+      "expected_behavior": "Agent should identify autonomous mode and guide through 7-step setup",
+      "assertions": [
+        {
+          "id": "a1",
+          "description": "Mentions autonomous or Mode B",
+          "type": "conversation_contains_any",
+          "values": [
+            "autonomous",
+            "Mode B",
+            "\u81ea\u4e3b"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "Runs <skill-cli> init or equivalent setup command",
+          "type": "cli_log_contains",
+          "value": "<skill-cli> init"
+        },
+        {
+          "id": "a3",
+          "description": "Provides expected output for each step",
+          "type": "conversation_contains",
+          "value": "Expected output"
+        }
+      ],
+      "timeout_seconds": 180
+    },
+    {
+      "id": 2,
+      "name": "autonomous-onboarding-defi-context",
+      "conversation_history": [
+        {
+          "role": "user",
+          "content": "I'm building an AI agent for DeFi arbitrage"
+        },
+        {
+          "role": "assistant",
+          "content": "DeFi arbitrage requires fast execution and specific token approvals. What chains are you targeting?"
+        },
+        {
+          "role": "user",
+          "content": "Mainly Base and Arbitrum for now"
+        }
+      ],
+      "prompt": "Now help me set up a wallet for this agent",
+      "expected_behavior": "Agent should recognize DeFi context and suggest appropriate policy constraints (spending limits, approved tokens, chain restrictions)",
+      "assertions": [
+        {
+          "id": "a1",
+          "description": "References DeFi or arbitrage context",
+          "type": "conversation_contains_any",
+          "values": [
+            "DeFi",
+            "arbitrage",
+            "\u5957\u5229"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "Suggests policy constraints for DeFi",
+          "type": "conversation_contains_any",
+          "values": [
+            "policy",
+            "spending limit",
+            "token approval",
+            "\u652f\u51fa\u9650\u989d"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "Mentions Base or Arbitrum chain",
+          "type": "conversation_contains_any",
+          "values": [
+            "Base",
+            "Arbitrum"
+          ]
+        }
+      ],
+      "timeout_seconds": 180
+    },
+    {
+      "id": 3,
+      "name": "supervised-with-token",
+      "prompt": "I have a token from my Portal: <setup-token>. Help me set up my agent wallet",
+      "expected_behavior": "Agent should recognize supervised mode (Mode A) and skip self-registration steps",
+      "assertions": [
+        {
+          "id": "a1",
+          "description": "Identifies supervised or Mode A path",
+          "type": "conversation_contains_any",
+          "values": [
+            "supervised",
+            "Mode A",
+            "Portal token"
+          ]
+        },
+        {
+          "id": "a2",
+          "description": "Does NOT suggest <skill-cli> init (already has token)",
+          "type": "conversation_not_contains",
+          "value": "<skill-cli> init"
+        },
+        {
+          "id": "a3",
+          "description": "Uses provided token",
+          "type": "cli_log_contains",
+          "value": "<skill-cli>_token_abc123"
+        }
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": 4,
+      "name": "error-handling-network-failure",
+      "prompt": "Set up my agent wallet. Note: the network is currently unstable.",
+      "expected_behavior": "Agent should attempt setup and handle network errors gracefully with retry suggestions",
+      "assertions": [
+        {
+          "id": "a1",
+          "description": "Attempts wallet setup",
+          "type": "cli_log_contains",
+          "value": "<skill-cli>"
+        },
+        {
+          "id": "a2",
+          "description": "Handles error or suggests retry",
+          "type": "conversation_contains_any",
+          "values": [
+            "retry",
+            "error",
+            "failed",
+            "try again",
+            "\u91cd\u8bd5"
+          ]
+        }
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": 5,
+      "name": "policy-configuration",
+      "conversation_history": [
+        {
+          "role": "user",
+          "content": "I've set up my agent wallet"
+        },
+        {
+          "role": "assistant",
+          "content": "Great! Your wallet is ready. What would you like to do next?"
+        }
+      ],
+      "prompt": "Configure a spending policy: max $100 per transaction, $500 daily limit, only USDC on Base",
+      "expected_behavior": "Agent should translate natural language to policy configuration commands",
+      "assertions": [
+        {
+          "id": "a1",
+          "description": "Runs policy create or update command",
+          "type": "cli_log_contains",
+          "value": "policy"
+        },
+        {
+          "id": "a2",
+          "description": "Includes transaction limit",
+          "type": "conversation_contains_any",
+          "values": [
+            "100",
+            "transaction limit",
+            "\u5355\u7b14\u9650\u989d"
+          ]
+        },
+        {
+          "id": "a3",
+          "description": "Includes daily limit",
+          "type": "conversation_contains_any",
+          "values": [
+            "500",
+            "daily",
+            "\u6bcf\u65e5"
+          ]
+        },
+        {
+          "id": "a4",
+          "description": "Specifies USDC token",
+          "type": "conversation_contains",
+          "value": "USDC"
+        }
+      ],
+      "timeout_seconds": 120
+    }
+  ],
+  "comparisons": [
+    {
+      "name": "context-sensitivity",
+      "description": "Compare DeFi context vs no context for onboarding",
+      "variant_a": {
+        "eval_id": 2
+      },
+      "variant_b": {
+        "eval_id": 1
+      },
+      "judge_criteria": "Does the agent appropriately tailor its guidance based on the DeFi context? Variant A should show more specific DeFi-related suggestions."
+    }
+  ]
+}

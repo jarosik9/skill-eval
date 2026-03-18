@@ -1,0 +1,73 @@
+{
+  "name": "example-triggers",
+  "description": "Example trigger rate test queries. Replace with queries relevant to your skill.",
+  "skill_keyword": "SKILL.md",
+  "triggers": [
+    {
+      "id": "tq-1",
+      "query": "I want to use my skill to manage crypto for my AI agent. I have Python 3.10+ installed but nothing else.",
+      "expected": true,
+      "category": "direct_install"
+    },
+    {
+      "id": "tq-2",
+      "query": "Set up a the service agent wallet for me in autonomous mode",
+      "expected": true,
+      "category": "direct_setup"
+    },
+    {
+      "id": "tq-3",
+      "query": "Transfer 1 USDC to 0xRecipient using my my wallet",
+      "expected": true,
+      "category": "direct_transfer"
+    },
+    {
+      "id": "tq-4",
+      "query": "Check my my wallet balance and recent transactions",
+      "expected": true,
+      "category": "direct_query"
+    },
+    {
+      "id": "tq-5",
+      "query": "I need to pay for an API call from my agent. The server returned HTTP 402",
+      "expected": true,
+      "category": "indirect_x402"
+    },
+    {
+      "id": "tq-6",
+      "query": "My crypto transfer is blocked. It says policy denied",
+      "expected": true,
+      "category": "indirect_policy"
+    },
+    {
+      "id": "tq-7",
+      "query": "How does x402 payment protocol work?",
+      "expected": true,
+      "category": "indirect_protocol"
+    },
+    {
+      "id": "tq-8",
+      "query": "My AI agent needs to spend crypto with guardrails",
+      "expected": true,
+      "category": "indirect_agent_wallet"
+    },
+    {
+      "id": "tq-9",
+      "query": "What's the weather today in Singapore?",
+      "expected": false,
+      "category": "negative_unrelated"
+    },
+    {
+      "id": "tq-10",
+      "query": "Help me write a Python function to sort a list of dictionaries",
+      "expected": false,
+      "category": "negative_coding"
+    },
+    {
+      "id": "tq-11",
+      "query": "Tell me about the latest news in AI this week",
+      "expected": false,
+      "category": "negative_news"
+    }
+  ]
+}
