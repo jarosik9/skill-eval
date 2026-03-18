@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## v0.6 — Public Release Prep (2026-03-19)
+
+### Breaking Changes
+
+- **Single recommended usage**: removed `run_orchestrator.py` one-liner from documentation
+  - v1 scripts (`run_orchestrator.py`, `run_compare.py`, `run_trigger.py`) moved to legacy status
+  - All docs now point to `USAGE.md` agent-driven workflows only
+  - Scripts remain in repo for reference but are not the recommended path
+
+### Added
+
+- `.gitignore` — excludes `workspace/` and `eval-workspace/` output directories
+- `LICENSE` — MIT
+- `CONTRIBUTING.md` — eval set contribution guidelines
+- `docs/` directory — moved internal design docs (SPEC, PLAN, ARCHITECTURE, PHASE-3-*)
+- `SKILL.md` metadata block with emoji
+- Result Viewer section in README
+
+### Fixed
+
+- Removed committed test artifacts from `workspace/`
+- Pinned `requirements.txt` version range
+
+### Simplified
+
+- SKILL.md reduced from 360 lines to 160 lines
+- Root directory now contains only: SKILL.md, README.md, USAGE.md, CHANGELOG.md, LICENSE, CONTRIBUTING.md
+
+---
+
 ## v0.5 — All Phase 3 Scripts Implemented (2026-03-18)
 
 ### New Features

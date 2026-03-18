@@ -8,16 +8,16 @@ metadata: { "openclaw": { "emoji": "🔬" } }
 
 Evaluation framework for any OpenClaw skill. No claude CLI dependency — all agent execution runs through `sessions_spawn` + `sessions_history`.
 
-**Scope**: Works with CLI tool skills, conversational skills, and API integration skills. Assertions are chosen based on skill type.
+**Scope**: Works with CLI tool skills, conversational skills, and API integration skills.
 
 ---
 
-## ⚠️ How This Skill Works (Read First)
+## How This Skill Works
 
-This skill uses a **two-layer architecture**. Understanding this prevents confusion:
+**Two-layer architecture**:
 
 ```
-Layer 1: The agent (main OpenClaw session) — YOU ARE HERE
+Layer 1: Agent (main OpenClaw session) — YOU ARE HERE
   → Reads evals.json
   → Calls sessions_spawn to run subagents
   → Calls sessions_history to collect results
@@ -29,75 +29,36 @@ Layer 2: Python analysis scripts (run via exec)
   → Generate reports
 ```
 
-**The Python scripts (`run_orchestrator.py`, `analyze_*.py`) are data processors — they cannot call `sessions_spawn` themselves.** They must be driven by the agent in the main session.
-
-### ✅ Correct usage
-
-The agent (you, in the main session) follows the workflows in `USAGE.md`:
-1. Spawn subagents directly using `sessions_spawn`
-2. Collect results using `sessions_history`
-3. Write raw data to `workspace/{skill}/iter-{n}/raw/`
-4. Then run the analysis scripts via `exec`
-
-### ❌ Will not work
-
-```bash
-# Running scripts from a sub-agent context — WILL FAIL
-# sessions_spawn is not available in isolated subagent environments
-python scripts/run_orchestrator.py --evals ...
-```
-
-> **Note on `run_orchestrator.py`**: This script is a legacy v1 runner. In v2, the agent handles `sessions_spawn` directly; Python scripts only do data analysis. Use `run_orchestrator.py` only via `execute_program` (which has `oc_tools`) or as a reference for the workflow — not as a standalone CLI.
-
-**→ See `USAGE.md` for the complete step-by-step agent-driven workflow.**
+Python scripts (`analyze_*.py`) are data processors — they cannot call `sessions_spawn`. The agent drives the workflow.
 
 ---
 
-## Quick Start (5 minutes)
+## Usage
 
-### Step 1: Spawn subagents (agent does this directly)
+**Follow `USAGE.md` for all workflows.**
 
-```python
-# For each eval query, spawn a subagent
-session_key = sessions_spawn(
-    task=f"Read {skill_path} for guidance. Then: {prompt}",
-    sandbox="inherit",
-    cleanup="keep",
-    mode="run",
-    label=f"eval-{eval_id}"
-)
-# Wait for all to complete (watch for announce signals)
-```
+Quick reference:
 
-### Step 2: Run analysis script (after collecting raw data)
+| Workflow | What It Tests | USAGE.md Section |
+|----------|---------------|------------------|
+| Trigger Rate | Does `description` trigger SKILL.md reads at the right times? | Workflow 1 |
+| Quality Compare | Does skill improve output vs no-skill baseline? | Workflow 2 |
+| Model Comparison | Quality + Speed across haiku/sonnet/opus | Workflow 3 |
+| Latency Profile | Response time p50/p90 | Workflow 4 |
 
-```bash
-python scripts/analyze_triggers.py \
-    --evals evals/example-triggers.json \
-    --histories workspace/my-skill/iter-1/raw/histories/ \
-    --output workspace/my-skill/iter-1/trigger_results.json
-```
-
-**See `USAGE.md` for the complete workflow** — including how to spawn subagents, collect histories, and run each analysis script in order.
-
----
-
-## Three Evaluation Modes
-
-| Mode | Tests | Core Mechanism |
-|------|-------|----------------|
-| **Trigger Rate** | Description trigger accuracy | spawn subagents + `sessions_history` tool_use detection |
-| **Quality Compare** | with skill vs without skill output quality | spawn two groups + grader subagent scoring |
-| **Aggregate** | Combined report | `scripts/aggregate_benchmark.py` |
+Each workflow follows the same pattern:
+1. Agent spawns subagents using `sessions_spawn`
+2. Agent collects histories using `sessions_history`
+3. Agent writes raw data to `workspace/{skill}/iter-{n}/raw/`
+4. Agent runs analysis script via `exec`
 
 ---
 
 ## Core Principles
 
-1. **Never modify the evaluated skill** — observe only, give recommendations, don't edit skill files directly
-2. **Keep eval records in workspace** — all output goes to `<workspace>/eval-workspace/<skill-name>/iteration-N/`, never pollutes the skill itself
-3. **evals.json is shared across iterations** — definition lives at `eval-workspace/<skill-name>/evals.json`; each run saves a `evals-snapshot.json` to the iteration directory
-4. **Keep full records** — save `full_history.json` (including all tool_use + tool_result), not just the final text
+1. **Never modify the evaluated skill** — observe only, give recommendations
+2. **Keep eval records in workspace** — output goes to `eval-workspace/<skill-name>/iteration-N/`
+3. **Keep full records** — save `full_history.json` (including tool_use + tool_result)
 
 ---
 
@@ -105,153 +66,32 @@ python scripts/analyze_triggers.py \
 
 | File | Purpose | When to Use |
 |------|---------|-------------|
-| `grader.md` | Check assertions item by item, record behavior anomalies, give priority recommendations | **Main flow**: required for every eval |
-| `comparator.md` | Blind comparison — no assertions, purely judge which output is better | **Supplementary**: when unbiased comparison is needed, or assertions can't capture subjective quality |
-| `analyzer.md` | After all evals complete, analyze cross-eval patterns and anomalies | **Post-analysis**: after all grading is done |
-
-Typical order: grader (per eval) → analyzer (after all evals). comparator is optional.
+| `grader.md` | Check assertions, record behavior anomalies, give priority recommendations | Required for every Quality Compare eval |
+| `comparator.md` | Blind A/B comparison without assertions | When unbiased comparison is needed |
+| `analyzer.md` | Analyze cross-eval patterns after all evals complete | Post-analysis |
 
 ---
 
-## Standard Directory Structure
+## Directory Structure
 
 ```
 eval-workspace/<skill-name>/
-├── evals.json                           ← Eval definition (shared across iterations)
+├── evals.json                    ← Eval definition (shared across iterations)
 └── iteration-1/
-    ├── evals-snapshot.json              ← Snapshot of evals.json used this run
-    ├── eval-report.md                   ← Evaluation report (assertions + priority + recommendations)
-    └── histories/
-        ├── e1_with_full_history.json    ← with skill: full tool calls + output
-        ├── e1_without_full_history.json
-        └── ...
-```
-
----
-
-## Mode 1: Trigger Rate
-
-**Detection**: `sessions_history(includeTools=True)` scans tool_use blocks. `name=Read`, `path` contains `SKILL.md` → `triggered=True`. This is ground truth, not intent inference.
-
-**One-liner (recommended)**:
-```bash
-python scripts/run_orchestrator.py \
-    --evals evals/example-triggers.json \
-    --skill-path <skill-path>/SKILL.md \
-    --mode trigger \
-    --output-dir eval-workspace/<skill-name>/iteration-1 \
-    --workers 6
-```
-
-**Manual steps (for debugging)**:
-
-### Step 1: Spawn subagents (parallel)
-
-For each query in `evals/example-triggers.json`:
-```python
-# cleanup="keep" required — history must be retained for analysis
-session_key = sessions_spawn(
-    task=query,
-    sandbox="inherit",
-    cleanup="keep",
-    mode="run"
-)
-# Parallel execution via ThreadPoolExecutor(max_workers=6)
-# Use sessions_yield to wait for completion, record session_key
-```
-
-Output format `trigger_results_raw.json`:
-```json
-[{"id": "tq-1", "query": "...", "expected": true, "session_key": "agent:...:subagent:uuid"}]
-```
-
-### Step 2: Analyze history (parallel)
-
-```bash
-python scripts/run_trigger.py \
-    --raw trigger_results_raw.json \
-    --output eval-workspace/<skill-name>/iteration-1/trigger_rate_results.json \
-    --workers 6
-```
-
-Performance: 10 queries × 4-6 workers → 30s vs 3 minutes (10x faster)
-
----
-
-## Mode 2: Quality Compare
-
-**One-liner (recommended)**:
-```bash
-python scripts/run_orchestrator.py \
-    --evals evals/example-quality.json \
-    --skill-path <skill-path>/SKILL.md \
-    --mode compare \
-    --output-dir eval-workspace/<skill-name>/iteration-1 \
-    --workers 6
-```
-
-**Manual steps (for debugging)**:
-
-### Step 1: Spawn two groups of subagents (parallel)
-
-For each eval, spawn with_skill + without_skill variants concurrently:
-```python
-# with_skill: explicitly guided to read SKILL.md
-with_key = sessions_spawn(
-    task=f"Please first read <skill_path>/SKILL.md, then execute:\n\n{prompt}\n\nContext: {context}",
-    sandbox="inherit", cleanup="keep", mode="run"
-)
-
-# without_skill: direct prompt, no skill guidance
-without_key = sessions_spawn(
-    task=prompt,
-    sandbox="inherit", cleanup="keep", mode="run"
-)
-# Parallel via ThreadPoolExecutor(max_workers=6)
-```
-
-### Step 2: Extract transcripts (parallel)
-
-```bash
-python scripts/run_compare.py \
-    --evals eval-workspace/<skill-name>/evals.json \
-    --results compare_results_raw.json \
-    --output-dir eval-workspace/<skill-name>/iteration-1 \
-    --workers 6
-```
-
-`compare_results_raw.json` format:
-```json
-[{"eval_id": 1, "eval_name": "onboarding",
-  "with_skill_session": "agent:...", "without_skill_session": "agent:..."}]
-```
-
-Script output:
-- `eval-{id}-{name}/with_skill_full_history.json` — full history (including tool calls)
-- `eval-{id}-{name}/with_skill_transcript.txt` — full transcript (for grader)
-- `eval-{id}-{name}/metadata.json` — eval definition + assertions
-
-Performance: 5 evals × 2 variants × 4-6 workers → 40s vs 5 minutes (7x faster)
-
-### Step 3: Grader subagent scoring
-
-For each eval, spawn a grader subagent using `agents/grader.md` template filled with assertions + both transcripts. Write result to `eval-{id}-{name}/grading.json`.
-
----
-
-## Mode 3: Aggregate
-
-```bash
-python scripts/aggregate_benchmark.py \
-    eval-workspace/<skill-name>/iteration-1 \
-    --trigger trigger_rate_results.json \
-    --output eval-workspace/<skill-name>/iteration-1/benchmark.json
+    ├── raw/
+    │   ├── histories/            ← Trigger test session histories
+    │   └── transcripts/          ← Quality compare transcripts
+    ├── trigger_results.json      ← analyze_triggers output
+    ├── quality_results.json      ← analyze_quality output
+    └── diagnostics/
+        └── RECOMMENDATIONS.md
 ```
 
 ---
 
 ## evals.json Format
 
+**Quality Compare** (prompt + assertions):
 ```json
 {
   "skill_name": "my-skill",
@@ -260,7 +100,7 @@ python scripts/aggregate_benchmark.py \
       "id": 1,
       "name": "onboarding-fresh",
       "prompt": "Help me set up the wallet",
-      "context": "Clean machine, no prior setup. For grader context only, not injected to agent.",
+      "context": "Clean machine, no prior setup. For grader only.",
       "expected_output": "Install → configure → verify profile",
       "assertions": [
         {
@@ -275,13 +115,6 @@ python scripts/aggregate_benchmark.py \
           "type": "output_contains",
           "value": "profile current",
           "priority": true
-        },
-        {
-          "id": "a1-3",
-          "description": "[GAP] Dry-run before transfer",
-          "type": "output_contains",
-          "value": "dry-run",
-          "note": "Best practice — failure = gap in skill design"
         }
       ]
     }
@@ -289,7 +122,7 @@ python scripts/aggregate_benchmark.py \
 }
 ```
 
-For trigger tests:
+**Trigger Rate** (query + expected):
 ```json
 {
   "id": 1,
@@ -304,59 +137,48 @@ For trigger tests:
 
 ## Assertion Types
 
-Works for any skill type (CLI, API, conversational).
-
-| Type | Detection Method |
-|------|-----------------|
-| `output_contains` / `cli_log_contains` | Value appears in conversation or tool output |
-| `output_not_contains` / `cli_log_not_contains` | Value does not appear |
+| Type | Detection |
+|------|-----------|
+| `output_contains` | Value appears in conversation or tool output |
+| `output_not_contains` | Value does not appear |
 | `output_count_max` | Occurrences ≤ max |
-| `env_or_export_in_log` | Variable name appears in any export/setenv/env command |
 | `tool_called` | Specific tool called at least once |
 | `tool_not_called` | Specific tool not called |
-| `conversation_contains` | Value appears anywhere in with_skill conversation |
-| `conversation_not_contains` | Value does not appear |
+| `conversation_contains` | Value appears anywhere in conversation |
 | `conversation_contains_any` | At least one value appears |
-| `conversation_not_contains_any` | All values do not appear |
 
-**Priority assertions**: any failure → overall=FAIL, regardless of score.  
-**Gap assertions** (`"note": "Best practice..."`): failure = skill design gap, not a Claude execution error.
+**Priority assertions** (`"priority": true`): any failure → overall=FAIL.
+**Gap assertions** (`"note": "Best practice..."`): failure = skill design gap.
 
 ---
 
-## Issue Priority (grader output format)
+## Issue Priority (grader output)
 
 ```
-🔴 P0 Critical  — Core functionality completely broken
+🔴 P0 Critical  — Core functionality broken
 🟠 P1 High      — Significantly impacts usability
-🟡 P2 Medium    — Room for improvement but acceptable
+🟡 P2 Medium    — Room for improvement
 🟢 P3 Low       — Minor polish
 ```
-
-Each recommendation format: `[P0] <file>: <specific change>`
-
-Grader **gives recommendations only, does not modify** the evaluated skill.
 
 ---
 
 ## Behavior Anomaly Tracking
 
-In addition to assertions, grader records these behavior signals (often more diagnostic than pass/fail):
+Grader records these signals beyond assertions:
 
-| Field | Trigger Condition |
-|-------|------------------|
-| `path_corrections` | Used wrong path then self-corrected |
+| Field | Trigger |
+|-------|---------|
+| `path_corrections` | Wrong path then self-corrected |
 | `retry_count` | Same command executed multiple times |
 | `missing_file_reads` | Attempted to read non-existent files |
-| `tool_arg_errors` | Tool called with incorrect arguments |
-| `skipped_steps` | Steps explicitly required by skill were not executed |
-| `hallucinations` | Fabricated non-existent commands/parameters/APIs |
+| `skipped_steps` | Steps required by skill were not executed |
+| `hallucinations` | Fabricated non-existent commands/APIs |
 
 ---
 
 ## Key Constraints
 
-- **`sandbox="inherit"`** — subagents must inherit skill registration environment
+- **`sandbox="inherit"`** — subagents inherit skill registration environment
 - **`cleanup="keep"`** — history must be retained for trigger detection
-- **No claude CLI dependency** — all subagents run via `sessions_spawn`
-- Skill registration: place in a real directory under `skills.load.extraDirs` (symlinks rejected by security check)
+- Skill must be in a real directory under `skills.load.extraDirs` (symlinks rejected)
