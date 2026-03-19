@@ -12,6 +12,37 @@ Evaluation framework for any OpenClaw skill. No claude CLI dependency — all ag
 
 ---
 
+## Quick Eval
+
+Just say:
+```
+evaluate weather
+```
+
+The agent will:
+1. Run `scripts/resolve_paths.py weather` to find all paths
+2. Execute trigger rate + quality compare with detected evals
+3. Output results to `eval-workspace/weather/iter-N/`
+
+**Options**:
+- `evaluate weather trigger` — trigger rate only
+- `evaluate weather quality` — quality compare only
+- `evaluate github --mode all` — explicit mode
+
+**What gets auto-detected**:
+- Skill path: from OpenClaw built-in skills or registered extraDirs
+- Evals: from `evals/{skill-name}/` or fallback to `evals/example-*.json`
+- Output: next available `iter-N` directory
+
+**First step for agent**: Run the resolver to get paths:
+```bash
+python scripts/resolve_paths.py {skill-name} --mode {trigger|quality|all}
+```
+
+Use the JSON output to fill in paths for the workflows below.
+
+---
+
 ## How This Skill Works
 
 **Two-layer architecture**:
