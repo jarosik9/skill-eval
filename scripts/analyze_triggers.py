@@ -134,6 +134,18 @@ def analyze_triggers(
     specificity = len(true_negatives) / len(negatives) if negatives else 0
     accuracy = correct_count / total
 
+    # Description diagnosis: analyze failed positive cases
+    false_negatives = [r for r in positives if not r["triggered"]]
+    diagnosis = []
+    if false_negatives:
+        for r in false_negatives:
+            diagnosis.append({
+                "eval_id": r["id"],
+                "query": r["query"],
+                "category": r.get("category", "unknown"),
+                "diagnosis": "Positive query did not trigger skill read. Description may lack keywords to match this query pattern.",
+            })
+
     output = {
         "skill_name": skill_name,
         "skill_path": skill_path,
@@ -146,6 +158,7 @@ def analyze_triggers(
         "triggered_count": sum(1 for r in results if r["triggered"]),
         "missing_histories": missing,
         "results": results,
+        "description_diagnosis": diagnosis,
     }
 
     # Save
@@ -160,6 +173,21 @@ def analyze_triggers(
     print(f"Specificity: {specificity:.0%} ({len(true_negatives)}/{len(negatives)})")
     if missing:
         print(f"⚠️  Missing histories: {missing}")
+
+    # Print description diagnosis
+    if diagnosis:
+        print()
+        print(f"=== Description Diagnosis ({len(diagnosis)} issues) ===")
+        print("Positive queries that did NOT trigger skill read:")
+        print("→ These suggest gaps in skill description coverage.")
+        print()
+        for d in diagnosis:
+            print(f"  [{d['eval_id']}] \"{d['query']}\"")
+        print()
+        print("Recommendation: Update skill description to include keywords")
+        print("that would help the model associate these queries with the skill.")
+
+    print()
     print(f"✅ Saved to {output_file}")
 
     return output
