@@ -27,33 +27,21 @@ Layer 2: Python scripts (run via exec)
 
 ---
 
-## Quick Start: Validate Your Setup (5 minutes)
+## Quick Start (5 minutes)
 
-Run the bundled weather skill examples to verify the framework works before evaluating your own skill:
-
-**Step 1: Clone and register the skill**
 ```bash
+# 1. Clone and register
 git clone https://github.com/jarosik9/skill-eval.git
-# Add the parent directory to skills.load.extraDirs in openclaw.json
+# Add parent directory to skills.load.extraDirs in openclaw.json
+
+# 2. Ask your OpenClaw agent
+evaluate weather trigger
+
+# 3. Check output
+cat eval-workspace/weather/iter-1/trigger_results.json
 ```
 
-**Step 2: Ask your OpenClaw agent to run a trigger rate test**
-```
-Evaluate the weather skill's trigger rate using:
-  evals: skills/openclaw-eval-skill/evals/weather/triggers.json
-  skill path: /opt/homebrew/lib/node_modules/openclaw/skills/weather/SKILL.md
-  output: eval-workspace/weather/iter-1/
-Follow USAGE.md Workflow 1.
-```
-
-**Step 3: Check the output**
-```bash
-ls eval-workspace/weather/iter-1/
-# trigger_results.json — trigger rate per query
-# raw/histories/       — full session histories
-```
-
-That's it. If `trigger_results.json` exists with pass/fail per eval, the framework is working.
+If `trigger_results.json` shows pass/fail per eval, you're ready.
 
 ---
 
@@ -103,22 +91,22 @@ openclaw-eval-skill/
 │   └── analyzer.md   ← Cross-eval pattern analysis
 │
 ├── evals/
-│   ├── example-quality.json    ← Quality Compare examples
-│   ├── example-triggers.json   ← Trigger Rate examples
-│   └── weather/                ← Ready-to-run weather skill evals
-│       ├── quality.json
-│       └── triggers.json
+│   ├── weather/                ← Ready-to-run weather skill evals
+│   │   ├── quality.json
+│   │   └── triggers.json
+│   └── fake-tool/              ← Test skill for trigger validation
+│
+├── templates/
+│   └── cli-wrapper/            ← Eval templates for CLI tool skills
 │
 ├── scripts/
-│   ├── analyze_triggers.py     ← Trigger detection from session histories (v2)
-│   ├── analyze_quality.py      ← Quality scoring from transcripts (v2)
-│   ├── analyze_model_compare.py← Model comparison matrix (v2)
-│   ├── analyze_latency.py      ← Latency p50/p90 from timing files (v2)
+│   ├── analyze_triggers.py     ← Trigger detection from session histories
+│   ├── analyze_quality.py      ← Quality scoring from transcripts
+│   ├── analyze_model_compare.py← Model comparison matrix
+│   ├── analyze_latency.py      ← Latency p50/p90 from timing files
 │   ├── aggregate_benchmark.py  ← Summarize all gradings
-│   ├── run_diagnostics.py      ← Description health check
-│   ├── run_orchestrator.py     ← Legacy v1 parallel runner
-│   ├── run_compare.py          ← Legacy v1 transcript extractor
-│   └── run_trigger.py          ← Legacy v1 trigger detector
+│   ├── resolve_paths.py        ← Auto-detect skill/eval paths
+│   └── legacy/                 ← v1 scripts (reference only)
 │
 ├── viewer/
 │   ├── generate_review.py      ← Generate HTML review from grading JSON

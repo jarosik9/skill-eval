@@ -139,7 +139,7 @@ Return ONLY valid JSON:
   },
   "suggestions": [
     "[P0] setup/autonomous.md line 12: --tss-env sandbox → --env sandbox (flag renamed)",
-    "[P1] SKILL.md: add pre-flight profile check before all Operations commands"
+    "[P1] SKILL.md: add pre-flight profile check before all commands"
   ],
   "variant_a_label": "with_skill",
   "variant_b_label": "without_skill",

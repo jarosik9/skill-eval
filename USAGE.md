@@ -2,7 +2,7 @@
 
 **Version**: v2 (2026-03-18)
 
-**Core principle**: The agent (Mo) handles all OpenClaw API calls (spawn/history). Python scripts handle pure data analysis only.
+**Core principle**: The agent handles all OpenClaw API calls (spawn/history). Python scripts handle pure data analysis only.
 
 ---
 

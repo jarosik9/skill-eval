@@ -1,51 +1,37 @@
 # CHANGELOG
 
-## v0.6 — Public Release (2026-03-19)
+## v1.0.0 — Public Release (2026-03-19)
 
-### Changed
-- Single recommended usage path: agent-driven workflow via `USAGE.md`
-- Legacy v1 scripts (`run_*.py`) remain for reference but are not the primary path
+### Core Features
+- **Trigger Rate Testing**: Detect whether skill descriptions cause correct SKILL.md reads
+- **Quality Compare**: With-skill vs without-skill output comparison
+- **Model Comparison**: Quality + speed across haiku/sonnet/opus
+- **Latency Profiling**: p50/p90/std_dev statistics
+- **Description Diagnosis**: Identify gaps in skill description coverage
 
-### Added
-- Unit tests for `analyze_triggers.py` and `analyze_quality.py` (24 tests)
-- `.gitignore`, `LICENSE` (MIT), `CONTRIBUTING.md`
+### Architecture
+- Two-layer design: agent drives workflows, Python scripts analyze data
+- No `claude` CLI dependency — runs entirely via `sessions_spawn` + `sessions_history`
+- Parallel evaluation support (6-8 workers, 5-10x speedup)
 
-### Fixed
-- False positive trigger detection when `skill_path` has no parent directory
-- Removed hardcoded domain-specific trigger detection
+### Tooling
+- `resolve_paths.py`: Auto-detect skill paths from openclaw.json
+- `analyze_triggers.py`: Trigger detection with description diagnosis
+- `analyze_quality.py`: Assertion-based quality scoring
+- HTML report viewer for interactive result browsing
+- Unit tests (24 tests, pytest)
 
----
-
-## v0.5 — Description Diagnostics + Latency Profiling (2026-03-18)
-
-- Description quality diagnosis with prioritized recommendations
-- Latency profiling with p50/p90/std_dev statistics
-
----
-
-## v0.4 — Model Comparison (2026-03-18)
-
-- Cross-model Quality + Speed comparison (haiku/sonnet/opus)
-- Three-dimension evaluation framework (Quality/Speed/Cost)
+### Documentation
+- Agent-driven workflows in `USAGE.md`
+- Bundled `weather` and `fake-tool` evals for quick validation
+- CLI wrapper eval template
 
 ---
 
-## v0.3 — Parallel Execution (2026-03-18)
+## Pre-release History
 
-- Parallel evaluation orchestrator (5-10x speedup)
-- Concurrent transcript extraction
-
----
-
-## v0.2 — Visualization (2026-03-17)
-
-- HTML report generation (`viewer/`)
-- Side-by-side comparison UI
-
----
-
-## v0.1 — Core Framework (2026-03-08)
-
-- Initial release
-- Trigger rate detection
-- Quality comparison (with vs without skill)
+- v0.5: Description diagnostics + latency profiling
+- v0.4: Model comparison framework
+- v0.3: Parallel execution
+- v0.2: HTML visualization
+- v0.1: Initial trigger rate + quality compare
