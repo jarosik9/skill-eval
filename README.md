@@ -192,6 +192,21 @@ See `SKILL.md` for the full list of assertion types.
 - `cleanup="keep"` — history must be retained for trigger detection
 - Skill must be in a real directory under `skills.load.extraDirs` (symlinks rejected by security check)
 
+## Trigger Rate Limitation
+
+**Trigger detection works best for skills the model doesn't already know.**
+
+| Skill Type | Example | Reads SKILL.md? | Why |
+|------------|---------|-----------------|-----|
+| Model-unknown | custom internal tools, fake-tool | ✅ Yes | Must read guide to know how |
+| Model-known | weather (wttr.in), gh (GitHub CLI) | ❌ Often skips | Uses training knowledge directly |
+
+For well-known tools like `weather` or `gh`, the model may complete the task correctly **without** reading SKILL.md — it already knows how to use `curl wttr.in` or `gh pr list` from training data.
+
+**Recommendation**: Use trigger rate testing primarily for custom/internal skills where the model has no prior knowledge. For model-known skills, use Quality Compare instead to measure whether your skill improves output quality.
+
+**Future improvement**: We plan to add detection for "used skill capability" (not just "read SKILL.md") to cover model-known skills. See [issue tracking](https://github.com/jarosik9/skill-eval/issues).
+
 ---
 
 ## Documentation
