@@ -1,6 +1,6 @@
 ---
 name: openclaw-eval-skill
-description: "OpenClaw Skill evaluation framework. Use when: evaluating any OpenClaw skill quality — testing description trigger rate, comparing with/without skill output quality (quality compare), or running LLM-as-judge scoring. Works with any skill type (CLI tools, conversational, API integrations). No claude CLI dependency — runs via sessions_spawn + sessions_history. Supports parallel evaluation (6-8 workers, 5-10x performance gain). Trigger words: evaluate skill, benchmark, trigger rate, quality compare, A/B compare, skill effectiveness, skill evaluation. NOT for: debugging a single conversation, general testing tasks unrelated to skill evaluation."
+description: "Skill evaluation framework. Use when: testing trigger rate, quality compare (with/without skill), or model comparison. Runs via sessions_spawn + sessions_history. Trigger words: evaluate skill, benchmark, trigger rate, A/B compare. NOT for: debugging conversations, general testing unrelated to skill evaluation."
 metadata: { "openclaw": { "emoji": "🔬" } }
 ---
 
