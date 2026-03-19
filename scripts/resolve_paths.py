@@ -157,17 +157,38 @@ def resolve_paths(skill_name: str, mode: str = "all", extra_dirs: list[str] = No
     }
 
 
+def load_extra_dirs_from_config() -> list[str]:
+    """Load extraDirs from openclaw.json if available."""
+    config_paths = [
+        Path.home() / ".openclaw" / "openclaw.json",
+        Path.home() / ".config" / "openclaw" / "openclaw.json",
+    ]
+    
+    for config_path in config_paths:
+        if config_path.exists():
+            try:
+                with open(config_path) as f:
+                    config = json.load(f)
+                return config.get("skills", {}).get("load", {}).get("extraDirs", [])
+            except (json.JSONDecodeError, KeyError):
+                pass
+    return []
+
+
 def main():
     parser = argparse.ArgumentParser(description="Resolve paths for skill evaluation")
     parser.add_argument("skill_name", help="Name of the skill to evaluate")
     parser.add_argument("--mode", choices=["trigger", "quality", "all"], default="all",
                         help="Evaluation mode (default: all)")
-    parser.add_argument("--extra-dirs", nargs="*", default=[],
-                        help="Additional directories to search for skills")
+    parser.add_argument("--extra-dirs", nargs="*", default=None,
+                        help="Additional directories to search for skills (auto-detected from openclaw.json if not specified)")
     
     args = parser.parse_args()
     
-    result = resolve_paths(args.skill_name, args.mode, args.extra_dirs)
+    # Auto-load extraDirs from config if not specified
+    extra_dirs = args.extra_dirs if args.extra_dirs is not None else load_extra_dirs_from_config()
+    
+    result = resolve_paths(args.skill_name, args.mode, extra_dirs)
     print(json.dumps(result, indent=2))
     
     # Exit with error code if resolution failed
